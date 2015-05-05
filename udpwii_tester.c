@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#include <sys/select.h>
 
 #define WIIMOTE_ACCELEROMETER (1 << 0)
 #define WIIMOTE_BUTTONS (1 << 1)
@@ -80,6 +81,8 @@ void broadcast(const Server *srv) {
 
 int main(int argc, char *argv[]) {
   struct sockaddr_in saddr;
+  struct timeval timeout;
+  unsigned char in_buffer[46];
   Server srv;
   Wiimote wm;
 
@@ -128,9 +131,28 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  timeout.tv_sec = 1;
+  timeout.tv_usec = 0;
   for (;;) {
-    broadcast(&srv);
-    sleep(1);
+    fd_set read_fds;
+    FD_ZERO(&read_fds);
+    FD_SET(srv.sock, &read_fds);
+
+    select(FD_SETSIZE, &read_fds, NULL, NULL, &timeout);
+
+    if (FD_ISSET(srv.sock, &read_fds)) {
+      int read = recv(srv.sock, in_buffer, sizeof(in_buffer), 0);
+      int i;
+      for (i = 0; i < read; i++) {
+        printf("%02X ", in_buffer[i]);
+      }
+      putchar('\n');
+    }
+    else {
+      broadcast(&srv);
+      timeout.tv_sec = 1;
+      timeout.tv_usec = 0;
+    }
   }
 
   close(srv.sock);
