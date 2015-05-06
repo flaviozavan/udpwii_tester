@@ -22,6 +22,9 @@ typedef struct Wiimote {
   int button_left;
   int button_right;
   int button_home;
+  float accel_x;
+  float accel_y;
+  float accel_z;
 } Wiimote;
 
 typedef struct Server {
@@ -47,11 +50,15 @@ void dump_state(const Wiimote *wm) {
       "2: %d\n"
       "A: %d\n"
       "B: %d\n"
-      "Home: %d\n",
+      "Home: %d\n"
+      "Accel X: %f\n"
+      "Accel Y: %f\n"
+      "Accel Z: %f\n",
       wm->button_up, wm->button_down, wm->button_left, wm->button_right,
       wm->button_plus, wm->button_minus,
       wm->button_1, wm->button_2,
-      wm->button_a, wm->button_b, wm->button_home);
+      wm->button_a, wm->button_b, wm->button_home,
+      wm->accel_x, wm->accel_y, wm->accel_z);
 }
 
 void build_broadcast_buffer(Server *srv) {
@@ -141,12 +148,22 @@ int main(int argc, char *argv[]) {
     select(FD_SETSIZE, &read_fds, NULL, NULL, &timeout);
 
     if (FD_ISSET(srv.sock, &read_fds)) {
-      int read = recv(srv.sock, in_buffer, sizeof(in_buffer), 0);
-      int i;
-      for (i = 0; i < read; i++) {
-        printf("%02X ", in_buffer[i]);
+      recv(srv.sock, in_buffer, sizeof(in_buffer), 0);
+      int o = 3;
+
+      if (in_buffer[0] == 0xde) {
+        if (in_buffer[2] & WIIMOTE_ACCELEROMETER) {
+          int *p = (int *) (in_buffer+o);
+          float ux = (float) ((int) ntohl(*(p++)));
+          float uy = (float) ((int) ntohl(*(p++)));
+          float uz = (float) ((int) ntohl(*(p++)));
+          wm.accel_x = ux/1048576.f;
+          wm.accel_y = uy/1048576.f;
+          wm.accel_z = uz/1048576.f;
+          o += 12;
+        }
+        dump_state(&wm);
       }
-      putchar('\n');
     }
     else {
       broadcast(&srv);
