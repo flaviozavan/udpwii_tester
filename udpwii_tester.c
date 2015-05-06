@@ -9,6 +9,7 @@
 
 #define WIIMOTE_ACCELEROMETER (1 << 0)
 #define WIIMOTE_BUTTONS (1 << 1)
+#define WIIMOTE_IR (1 << 2)
 
 #define UDPWM_B1 (1<<0)
 #define UDPWM_B2 (1<<1)
@@ -40,6 +41,8 @@ typedef struct Wiimote {
   float accel_x;
   float accel_y;
   float accel_z;
+  float ir_x;
+  float ir_y;
 } Wiimote;
 
 typedef struct Server {
@@ -68,12 +71,15 @@ void dump_state(const Wiimote *wm) {
       "Home: %d\n"
       "Accel X: %f\n"
       "Accel Y: %f\n"
-      "Accel Z: %f\n",
+      "Accel Z: %f\n"
+      "IR X: %f\n"
+      "IR Y: %f\n",
       wm->button_up, wm->button_down, wm->button_left, wm->button_right,
       wm->button_plus, wm->button_minus,
       wm->button_1, wm->button_2,
       wm->button_a, wm->button_b, wm->button_home,
-      wm->accel_x, wm->accel_y, wm->accel_z);
+      wm->accel_x, wm->accel_y, wm->accel_z,
+      wm->ir_x, wm->ir_y);
 }
 
 void build_broadcast_buffer(Server *srv) {
@@ -194,6 +200,14 @@ int main(int argc, char *argv[]) {
           wm.button_home = (mask & UDPWM_BH? 1 : 0);
 
           o += 4;
+        }
+        if (in_buffer[2] & WIIMOTE_IR) {
+          int *p = (int *) (in_buffer+o);
+          float ux = (float) ((int) ntohl(*(p++)));
+          float uy = (float) ((int) ntohl(*(p++)));
+          wm.ir_x = ux/1048576.f;
+          wm.ir_y = uy/1048576.f;
+          o += 8;
         }
         dump_state(&wm);
       }
