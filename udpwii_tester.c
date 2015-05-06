@@ -37,6 +37,7 @@ typedef struct Wiimote {
   int button_down;
   int button_left;
   int button_right;
+  int button_sk;
   int button_home;
   float accel_x;
   float accel_y;
@@ -68,6 +69,7 @@ void dump_state(const Wiimote *wm) {
       "2: %d\n"
       "A: %d\n"
       "B: %d\n"
+      "SK(\?\?\?\?): %d\n"
       "Home: %d\n"
       "Accel X: %f\n"
       "Accel Y: %f\n"
@@ -77,7 +79,7 @@ void dump_state(const Wiimote *wm) {
       wm->button_up, wm->button_down, wm->button_left, wm->button_right,
       wm->button_plus, wm->button_minus,
       wm->button_1, wm->button_2,
-      wm->button_a, wm->button_b, wm->button_home,
+      wm->button_a, wm->button_b, wm->button_sk, wm->button_home,
       wm->accel_x, wm->accel_y, wm->accel_z,
       wm->ir_x, wm->ir_y);
 }
@@ -197,6 +199,7 @@ int main(int argc, char *argv[]) {
           wm.button_down = (mask & UDPWM_BD? 1 : 0);
           wm.button_left = (mask & UDPWM_BL? 1 : 0);
           wm.button_right = (mask & UDPWM_BR? 1 : 0);
+          wm.button_sk = (mask & UDPWM_SK? 1 : 0);
           wm.button_home = (mask & UDPWM_BH? 1 : 0);
 
           o += 4;
