@@ -10,6 +10,21 @@
 #define WIIMOTE_ACCELEROMETER (1 << 0)
 #define WIIMOTE_BUTTONS (1 << 1)
 
+#define UDPWM_B1 (1<<0)
+#define UDPWM_B2 (1<<1)
+#define UDPWM_BA (1<<2)
+#define UDPWM_BB (1<<3)
+#define UDPWM_BP (1<<4)
+#define UDPWM_BM (1<<5)
+#define UDPWM_BH (1<<6)
+#define UDPWM_BU (1<<7)
+#define UDPWM_BD (1<<8)
+#define UDPWM_BL (1<<9)
+#define UDPWM_BR (1<<10)
+#define UDPWM_SK (1<<11)
+#define UDPWM_NC (1<<0)
+#define UDPWM_NZ (1<<1)
+
 typedef struct Wiimote {
   int button_a;
   int button_b;
@@ -161,6 +176,24 @@ int main(int argc, char *argv[]) {
           wm.accel_y = uy/1048576.f;
           wm.accel_z = uz/1048576.f;
           o += 12;
+        }
+        if (in_buffer[2] & WIIMOTE_BUTTONS) {
+          int *p = (int *) (in_buffer+o);
+          int mask = (int) ntohl(*(p++));
+
+          wm.button_a = (mask & UDPWM_BA? 1 : 0);
+          wm.button_b = (mask & UDPWM_BB? 1 : 0);
+          wm.button_1 = (mask & UDPWM_B1? 1 : 0);
+          wm.button_2 = (mask & UDPWM_B2? 1 : 0);
+          wm.button_plus = (mask & UDPWM_BP? 1 : 0);
+          wm.button_minus = (mask & UDPWM_BM? 1 : 0);
+          wm.button_up = (mask & UDPWM_BU? 1 : 0);
+          wm.button_down = (mask & UDPWM_BD? 1 : 0);
+          wm.button_left = (mask & UDPWM_BL? 1 : 0);
+          wm.button_right = (mask & UDPWM_BR? 1 : 0);
+          wm.button_home = (mask & UDPWM_BH? 1 : 0);
+
+          o += 4;
         }
         dump_state(&wm);
       }
